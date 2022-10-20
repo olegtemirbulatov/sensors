@@ -1,0 +1,21 @@
+{% block content %}
+<h1>Регистрация</h1>
+
+<form method="post">
+    {% csrf_token %}
+<table>
+    <tbody>
+        {% for f in form %}
+        <tr>
+            <p><td><label class="form-label" for="{{ f.id_label }}">{{f.label}}: </label></td><td>{{ f }}</td></p>
+        </tr>
+        <tr>
+            <div class="form-errors">{{ f.errors }}</div>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+{% endblock %}
