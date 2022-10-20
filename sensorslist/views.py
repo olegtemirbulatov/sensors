@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.template import loader
 from django.http import HttpResponse, HttpRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from .models import Sensor
 
 
@@ -24,7 +25,18 @@ def delete_data(request):
     for key in req.keys():
         req[key] = req[key][0]
     object_to_delete = Sensor.objects.filter(name=req['Name'], user=req['User'])
+    #if object_to_delete:
     object_to_delete.delete()
+    return HttpResponse(status=200)
+
+
+@csrf_exempt # error 403
+def save_data(request):
+    req = dict(request.POST)
+    for key in req.keys():
+        req[key] = req[key][0]
+    object_to_save = Sensor(name=req['Name'], user=req['User'], pub_date=timezone.now())
+    object_to_save.save()
     return HttpResponse(status=200)
 
 

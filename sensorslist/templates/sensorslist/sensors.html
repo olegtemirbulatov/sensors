@@ -49,7 +49,7 @@
             for (var i = 0; i < cellCount; i++) {
                 var cell = row.insertCell(i);
                 if (i < cellCount-1) {
-                    cell.innerHTML = '<input type="text" class="form-control" />';
+                    cell.innerHTML = '<input type="text" class="form-control" value="" />';
                 }
                 else {
                     cell.innerHTML = '<input class="btn btn-danger" '
@@ -78,46 +78,85 @@
             var rowCount = table.rows.length;
             var row = ele.parentNode.parentNode;
             console.log('rowIndex = ', row.rowIndex);
-            /*
-            if (rowCount <= 1) {
-                alert("There is no sensor to delete!");
-                return;
-            }
-            */
+
             if (ele) {
                 // delete specifc row
-                console.log('if Save button in row: ', getElementsByValue(row, row.rowIndex, "Save"));
-                if (getElementsByValue(row, row.rowIndex, "Save") == false) {
-                    var tr = document.querySelectorAll('tr');
-                    var needtr = tr[row.rowIndex].querySelectorAll('td');
-                    var objectData =
-                    {
-                        User: needtr[0].innerHTML,
-                        Name: needtr[1].innerHTML
-                    };
-                    //var objectDataString = JSON.stringify(objectData);
-                    console.log('object: ', objectData);
+                var tr = document.querySelectorAll('tr');
+                var needtr = tr[row.rowIndex].querySelectorAll('td');
+                var objectData =
+                {
+                    User: needtr[0].innerHTML,
+                    Name: needtr[1].innerHTML
+                };
+                console.log('object: ', objectData);
 
-                    $.ajax({
-                        type: "POST",
-                        url: "http://127.0.0.1:8000/sensorslist/delete_data/", //add new url for each of the activity,
-                        dataType: "json",
-                        data: objectData,
-                        success: function (data) {
-                            console.log('success!');
-                        },
-                        error: function (data) {
-                            console.log('error');
-                        }
-                    });
-                }
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:8000/sensorslist/delete_data/", //add new url for each of the activity,
+                    dataType: "json",
+                    data: objectData,
+                    success: function (data) {
+                        console.log('success!');
+                    },
+                    error: function (data) {
+                        console.log('error');
+                    }
+                });
                 row.parentNode.removeChild(row);
             }
         }
 
-        function saveNewData() {
+        function saveNewData(ele) {
             var table = document.getElementById('sensors-table');
-            var row = 0;
+            var row = ele.parentNode.parentNode;
+
+            if (ele) {
+                var tr = document.querySelectorAll('tr');
+                var row_index = row.rowIndex
+                var needtr = tr[row_index].querySelectorAll('input');
+                var objectData =
+                {
+                    User: needtr[0].value,
+                    Name: needtr[1].value
+                };
+                
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:8000/sensorslist/save_data/", //add new url for each of the activity,
+                    dataType: "json",
+                    data: objectData,
+                    success: function (data) {
+                        console.log('success!');
+                    },
+                    error: function (data) {
+                        console.log('error');
+                    }
+                });
+
+                //console.log('object: ', objectData);
+                
+                /*
+                удаление строки для ввода данных
+                отображение новых данных в виде текста
+                */
+                row.parentNode.removeChild(row);
+
+                var newrow = table.insertRow(row_index);
+                var newcellCount = table.rows[0].cells.length;
+
+                for (var i = 0; i < newcellCount; i++) {
+                    var newcell = newrow.insertCell(i);
+                    if (i < newcellCount-1) {
+                        newcell.innerHTML = '<td>' + Object.values(objectData)[i] + '</td>';
+                    }
+                    else {
+                        newcell.innerHTML = '<td> '
+                            + '<input class="btn btn-danger" type="button" value="Delete" onclick="deleteRow(this)" />'
+                            + ' <input class="btn btn-success" type="button" value="Details" onclick="watchDetails()" />'
+                        + '</td>';
+                    }
+                }
+            }
         }
 
     </script>
