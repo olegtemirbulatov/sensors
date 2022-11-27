@@ -1,0 +1,22 @@
+{% block content %}      
+
+<!--Login--> 
+<div class="container py-5">
+  <h1>Авторизация</h1>
+  <form method="POST">
+    {% csrf_token %}    
+    <table>
+        <tbody>
+            {% for form in login_form %}
+            <tr>
+                <p><td><label class="form-label" for="{{ form.id_label }}">{{form.label}}: </label></td><td>{{ form }}</td></p>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button class="btn btn-primary" type="submit">Войти</button>
+  </form>
+  <p class="text-center">Нет аккаунта? <a href="{% url 'registration:registration' %}">Создать аккаунт</a>.</p>
+</div>
+
+{% endblock %}
