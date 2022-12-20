@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+    
     <!--Navbar-->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/sensorslist/">SensorsApp</a>
@@ -16,13 +17,13 @@
             <li class="nav-item">
             <a class="nav-link" href="#">Welcome, {{user.username}}</a>
             </li>
-    
+
             {% else %}
-    
+
             <li class="nav-item">
             <a class="nav-link" href="{% url 'login:login' %}">Login</a>
             </li>
-    
+
             {% endif %}
         </ul>
         </div>
@@ -57,9 +58,15 @@
                     <td id="user">{{ sensor.user }}</td>
                     <td id="sensor">{{ sensor.name }}</td>
                     <td>
+                        <input class="btn btn-primary" type="button" value="Load new data" onclick="loadNewData(this)" />
+                        <input class="btn btn-info" type="button" value="Plot data" onclick="plotData(this)" />
                         <input class="btn btn-danger" type="button" value="Delete" onclick="deleteRow(this)" />
-                        <input class="btn btn-success" type="button" value="Details" onclick="watchDetails()" />
                     </td>
+                </tr>
+                <tr>
+                    <div id="container" style="width: 40%;">
+                        <canvas id="plot_data" data-url="{% url 'sensorslist:plot_data' %}"></canvas>
+                    </div>
                 </tr>
                 {% endfor %}
             </table>
@@ -67,6 +74,7 @@
     </body>
 
     <script src="https://yastatic.net/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
     <script type="text/javascript">
 
         function addNewRow() {
@@ -80,20 +88,6 @@
             row.insertCell(2).innerHTML = '<input class="btn btn-danger" '
                     + ' type="button" value="Delete" onclick="deleteRow(this)" />'
                     + ' <input class="btn btn-success" type="button" value="Save" onclick="saveNewData(this)" />';
-        }
-        
-        function getElementsByValue(row, index, value) {
-            /*
-            не работает, если добавили новую строку с кнопкой "Save"!!!
-            */
-            var tr = document.querySelectorAll('tr');
-            var button = tr[index].querySelectorAll('input');
-            console.log('button value = ', button[1].getAttribute('value'));
-            var attr = button[1].getAttribute('value');
-            if (attr == value) {
-                return true;
-            }
-            return false;
         }
 
         function deleteRow(ele) {
@@ -118,12 +112,6 @@
                     url: "http://127.0.0.1:8000/sensorslist/delete_data/", //add new url for each of the activity,
                     dataType: "json",
                     data: objectData,
-                    success: function (data) {
-                        console.log('success!');
-                    },
-                    error: function (data) {
-                        console.log('error');
-                    }
                 });
                 row.parentNode.removeChild(row);
             }
@@ -149,15 +137,9 @@
                     url: "http://127.0.0.1:8000/sensorslist/save_data/", //add new url for each of the activity,
                     dataType: "json",
                     data: objectData,
-                    success: function (data) {
-                        console.log('success!');
-                    },
-                    error: function (data) {
-                        console.log('error');
-                    }
                 });
 
-                //console.log('object: ', objectData);
+                console.log('object: ', objectData);
                 
                 /*
                 удаление строки для ввода данных
@@ -175,15 +157,142 @@
                     }
                     else {
                         newcell.innerHTML = '<td> '
-                            + '<input class="btn btn-danger" type="button" value="Delete" onclick="deleteRow(this)" />'
-                            + ' <input class="btn btn-success" type="button" value="Details" onclick="watchDetails()" />'
+                            + '<input class="btn btn-primary" type="button" value="Load new data" onclick="loadNewData(this)" />'
+                            + ' <input class="btn btn-info" type="button" value="Plot data" onclick="plotData(this)" />'
+                            + ' <input class="btn btn-danger" type="button" value="Delete" onclick="deleteRow(this)" />'
                         + '</td>';
                     }
                 }
             }
         }
 
-        function showData(ele)
+        function loadNewData(ele) {
+            var table = document.getElementById('sensors-table');
+            var row = ele.parentNode.parentNode;
+
+            if (ele) {
+                var tr = document.querySelectorAll('tr');
+                var row_index = row.rowIndex
+                var sensor_name = tr[row_index].querySelectorAll('td')[1].innerHTML;
+                var objectData =
+                {
+                    Name: sensor_name // name of sensor!
+                };
+                console.log('object: ', objectData);
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:8000/sensorslist/load_data/", //add new url for each of the activity,
+                    dataType: "json",
+                    data: objectData,
+                });
+            }
+        }
+
+        
+            
+
+        // добавить этот элемент в html-разметку в новую строку!
+        
+        
+        function plotData(ele) {
+            var table = document.getElementById('sensors-table');
+            var row = ele.parentNode.parentNode;
+
+            if (ele) {
+                var tr = document.querySelectorAll('tr');
+                var row_index = row.rowIndex
+                var sensor_name = tr[row_index].querySelectorAll('td')[1].innerHTML;
+                var objectData =
+                {
+                    Name: sensor_name // name of sensor!
+                };
+                console.log('object: ', objectData);
+
+                var $measurementChart = $("#plot_data");
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:8000/sensorslist/plot_data/", //add new url for each of the activity,
+                    dataType: "json",
+                    data: objectData,
+                    success :function (data) {
+
+                        var ctx = $measurementChart[0].getContext("2d");
+
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.time,
+                                datasets: [{
+                                    label: 'Temperature',
+                                    backgroundColor: 'blue',
+                                    data: data.meas,
+                                    fill: false,
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Temperature values'
+                                },
+                                scales: {
+                                    xAxes: [{
+                                        display: true,
+                                        scaleLabel: {
+                                            display: true,
+                                            labelString: 'Date'
+                                        }
+                                    }],
+                                    yAxes: [{
+                                        display: true,
+                                        scaleLabel: {
+                                            display: true,
+                                            labelString: 'Temperature'
+                                        }
+                                    }]
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // график
+            // var $measurementChart = $("#plot_data");
+            // $.ajax({
+            //     url: $measurementChart.data("url"),
+            //     success: function (data) {
+
+            //     var ctx = $measurementChart[0];//.getContext("2d");
+
+            //     new Chart(ctx, {
+            //         type: 'bar',
+            //         data: {
+            //             labels: data.time,
+            //             datasets: [{
+            //                 label: 'Population',
+            //                 backgroundColor: 'blue',
+            //                 data: data.meas
+            //             }]
+            //         },
+            //         options: {
+            //             responsive: true,
+            //             legend: {
+            //                 position: 'top',
+            //         },
+            //         title: {
+            //             display: true,
+            //             text: 'Population Bar Chart'
+            //         }
+            //         }
+            //     });
+
+            //     }
+            // });
+        }
 
     </script>
 </html>

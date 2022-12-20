@@ -11,6 +11,7 @@ from influxdb_client.client.authorizations_api import AuthorizationsApi
 from influxdb_client.client.bucket_api import BucketsApi
 from influxdb_client.client.query_api import QueryApi
 from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client.domain.dialect import Dialect
 
 from .sensor import SensorImit
 
@@ -21,7 +22,6 @@ config_path = os.path.join(ROOT_DIR, "config.ini")
 
 config = configparser.ConfigParser()
 config.read(config_path)
-
 
 def createauthorization(device_id) -> Authorization:
     influxdb_client = InfluxDBClient(url=config.get('APP', 'INFLUX_URL'),
@@ -141,9 +141,10 @@ def get_measurements(query):
                                        comment_prefix="#",
                                        annotations=['group', 'datatype', 'default'],
                                        date_time_format="RFC3339"))
-    response = ''
+    response = []
     for row in result:
-        response += (',').join(row) + ('\n')
+        #response += (',').join(row) + ('\n')
+        response.append(row)
     return response
 
 
@@ -154,13 +155,26 @@ def api_get_device(device_id):
     return _corsify_actual_response(jsonify(devices.get_device(device_id)))
 
 
-#createauthorization('test_device')
+# брать запрос в бд отсюда
+# device_filter = f'r.device == "testdevice"'
+# query = f'from(bucket: "{config.get("APP", "INFLUX_BUCKET")}") ' \
+#         f'|> range(start: 0, stop: now()) ' \
+#         f'|> filter(fn: (r) => {device_filter} and r._field == "Temperature")' \
+#         '|> sort(columns: ["_time"]) '
 
-# influxdb_client = InfluxDBClient(url=config.get('APP', 'INFLUX_URL'),
-#                                     token=config.get('APP', 'INFLUX_TOKEN'),
-#                                     org=config.get('APP', 'INFLUX_ORG'))
-# authorization_api = AuthorizationsApi(influxdb_client)
-#device_id_2 = create_device(device_id='testdevice')
+# #         #r._measurement == "environment" and 
+# data = get_measurements(query)
+    
+# # формирование списков значений с данными и временем
+# time_index = data[3].index('_time')
+# meas_index = data[3].index('_value')
+# time = list()
+# meas = list()
+# for l in data:
+#     print(l)
+# for i in range(len(data[4:-1])):
+#     time.append(data[4+i][time_index])
+#     meas.append(data[4+i][meas_index])
 
-# create_device('some sensor')
-# write_measurements('some sensor')
+# print(time)
+# print(meas)
